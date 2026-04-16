@@ -1,0 +1,9 @@
+version: 1
+agent: google-sheets-apps-script
+
+required_skills:
+  - id: core-delivery
+    instructions: >
+      Build the simplest correct MVP first, then refine only if needed. Write
+      professional, maintainable, and AI-readable Apps Script code that is easy
+      for humans, Claude, Codex, and Copilot to review and extend.
