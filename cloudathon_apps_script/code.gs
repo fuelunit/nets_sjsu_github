@@ -20,31 +20,66 @@
 //   A team_id  B competition  C member_emails  D team_type
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Column index map for the Registrants sheet.
+ * Each value is zero-based and corresponds to the header layout
+ * documented in the file header.
+ */
 const C = {
   EMAIL: 0, FIRST: 1, LAST: 2, COMP: 3, SKILL: 4,
   STATUS: 5, TEAM: 6, LEADER: 7, OPEN: 8, TIME: 9,
   OFFER: 10, FLAGS: 11
 };
 
-// Update these if form question order ever changes
+/**
+ * Question index map for the form response sheet.
+ * Update these if the form question order ever changes.
+ */
 const F = {
   TIMESTAMP: 0, FIRST: 2, LAST: 4, EDU_EMAIL: 5,
   COMP: 8, SKILL: 9, PLACEMENT: 10, LEADER: 11, OPEN: 12
 };
 
+/**
+ * Returns the named sheet from the active spreadsheet.
+ * @param {string} name Sheet name
+ * @return {GoogleAppsScript.Spreadsheet.Sheet|null} matching sheet
+ */
 const SHEET = name => SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
 
+/**
+ * Reads all rows from the Registrants sheet below the header.
+ * @return {Array<Array<?>>} 2D array of registrant values, or [] when empty
+ */
 function allRows() {
   const s = SHEET('Registrants');
   const last = s.getLastRow();
   return last < 2 ? [] : s.getRange(2, 1, last - 1, 12).getValues();
 }
 
+/**
+ * Writes a single value into the Registrants sheet using zero-based
+ * row and column indices.
+ * @param {number} rowIdx zero-based row index in registrants rows
+ * @param {number} colIdx zero-based column index from `C`
+ * @param {*} value cell value
+ */
 function setCell(rowIdx, colIdx, value) {
   SHEET('Registrants').getRange(rowIdx + 2, colIdx + 1).setValue(value);
 }
 
+/**
+ * Normalizes a value into a lowercase trimmed string.
+ * @param {*} v any value
+ * @return {string} normalized string
+ */
 function norm(v)        { return String(v ?? '').trim().toLowerCase(); }
+
+/**
+ * Normalizes raw competition text to the expected competition label.
+ * @param {*} raw competition value from the form
+ * @return {string} canonical competition name or '' when unknown
+ */
 function compShort(raw) {
   const s = norm(raw);
   if (s.includes('cyber'))   return 'Cybersecurity';
@@ -53,6 +88,12 @@ function compShort(raw) {
   return '';
 }
 
+/**
+ * Computes the Levenshtein edit distance between two strings.
+ * @param {string} a
+ * @param {string} b
+ * @return {number} number of edits required to transform a into b
+ */
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
   const d = Array.from({length: m + 1}, (_, i) => [i]);
@@ -64,6 +105,10 @@ function levenshtein(a, b) {
   return d[m][n];
 }
 
+/**
+ * Imports latest form responses into the Registrants sheet.
+ * Handles duplicate submissions, leader typos, and resubmission flags.
+ */
 // ─────────────────────────────────────────────────────────────
 // importFromFormResponses
 // ─────────────────────────────────────────────────────────────
@@ -141,6 +186,10 @@ function importFromFormResponses() {
   SpreadsheetApp.getUi().alert(`Imported ${count} rows.\nNow run runAssignment().`);
 }
 
+/**
+ * Builds teams from confirmed registrants, flags invalid groups,
+ * writes the Teams sheet, and fills team IDs back into Registrants.
+ */
 // ─────────────────────────────────────────────────────────────
 // runAssignment
 // ─────────────────────────────────────────────────────────────
